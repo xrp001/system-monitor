@@ -1,5 +1,5 @@
 {
-  "uuid": "system-monitor-beautiful@jetio",
+  "uuid": "system-monitor-beautiful@user",
   "name": "System Monitor Beautiful",
   "description": "在 GNOME 顶栏上以低开销显示 CPU、内存与网络上下行速率，并支持刷新间隔设置。",
   "shell-version": ["42"],

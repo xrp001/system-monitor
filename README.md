@@ -19,6 +19,7 @@
 - `stylesheet.css`：样式
 - `schemas/`：GSettings schema
 - `install.sh`：一键安装脚本
+- `uninstall.sh`：一键卸载脚本
 
 ## 安装方法
 
@@ -33,31 +34,58 @@
 
 安装完成后，按 **Alt+F2**，输入 `r`，然后按 **Enter** 重启 GNOME Shell。
 
+## 卸载方法
+
+### 一键卸载（推荐）
+
+```bash
+./uninstall.sh
+```
+
+卸载后按 **Alt+F2**，输入 `r`，然后按 **Enter** 重启 GNOME Shell。
+
+### 手动卸载
+
+```bash
+gnome-extensions disable system-monitor-beautiful@$USER
+rm -rf ~/.local/share/gnome-shell/extensions/system-monitor-beautiful@$USER
+```
+
 ### 方法二：手动安装
 
-1. 将项目复制到 GNOME 扩展目录：
+> `$USER` 会自动替换为当前用户名，无需手动修改。
+
+1. 生成扩展元数据（将 `user` 替换为你的用户名）：
 
    ```bash
-   cp -r . ~/.local/share/gnome-shell/extensions/system-monitor-beautiful@jetio
+   sed "s/@user/@$(whoami)/g" metadata.json > "/tmp/metadata.json"
    ```
 
-2. 编译 schema：
+2. 将项目复制到 GNOME 扩展目录：
 
    ```bash
-   glib-compile-schemas ~/.local/share/gnome-shell/extensions/system-monitor-beautiful@jetio/schemas/
+   mkdir -p ~/.local/share/gnome-shell/extensions/system-monitor-beautiful@$USER
+   cp extension.js prefs.js stylesheet.css "/tmp/metadata.json" ~/.local/share/gnome-shell/extensions/system-monitor-beautiful@$USER/
+   cp -r schemas ~/.local/share/gnome-shell/extensions/system-monitor-beautiful@$USER/
    ```
 
-3. 安装 schema 到系统目录（需要 sudo 权限）：
+3. 编译 schema：
 
    ```bash
-   sudo cp ~/.local/share/gnome-shell/extensions/system-monitor-beautiful@jetio/schemas/org.gnome.shell.extensions.system-monitor-beautiful.gschema.xml /usr/share/glib-2.0/schemas/
+   glib-compile-schemas ~/.local/share/gnome-shell/extensions/system-monitor-beautiful@$USER/schemas/
+   ```
+
+4. 安装 schema 到系统目录（需要 sudo 权限）：
+
+   ```bash
+   sudo cp schemas/org.gnome.shell.extensions.system-monitor-beautiful.gschema.xml /usr/share/glib-2.0/schemas/
    sudo glib-compile-schemas /usr/share/glib-2.0/schemas/
    ```
 
-4. 启用扩展：
+5. 启用扩展：
 
    ```bash
-   gnome-extensions enable system-monitor-beautiful@jetio
+   gnome-extensions enable system-monitor-beautiful@$USER
    ```
 
 5. 重启 GNOME Shell：
@@ -67,7 +95,7 @@
 ## 验证安装
 
 ```bash
-gnome-extensions info system-monitor-beautiful@jetio
+gnome-extensions info system-monitor-beautiful@$USER
 ```
 
 应显示状态为 **ENABLED**。
@@ -84,7 +112,7 @@ gnome-extensions info system-monitor-beautiful@jetio
 ### 安装后在扩展管理中看不到？
 
 1. 确保 `metadata.json` 文件末尾有换行符
-2. 运行 `gnome-extensions enable system-monitor-beautiful@jetio` 启用扩展
+2. 运行 `gnome-extensions enable system-monitor-beautiful@$USER` 启用扩展
 3. 重启 GNOME Shell（X11: Alt+F2 → r → Enter）
 
 ### 可以使用 root 用户安装吗？
@@ -92,11 +120,11 @@ gnome-extensions info system-monitor-beautiful@jetio
 **不可以。** 请以**普通用户**身份运行安装脚本。GNOME Shell 扩展必须安装在用户的本地目录（`~/.local/share/gnome-shell/extensions/`）下。
 如果使用 `sudo ./install.sh`，扩展会被安装到 root 用户的目录下，当前用户无法看到和使用该扩展。
 
-如不慎使用 root 安装，请删除 `/root/.local/share/gnome-shell/extensions/system-monitor-beautiful@jetio` 后以普通用户重新安装。
+如不慎使用 root 安装，请删除 `/root/.local/share/gnome-shell/extensions/system-monitor-beautiful@<你的用户名>` 后以普通用户重新安装。
 
 ### 顶栏没有显示监控数据？
 
-1. 确认扩展状态为 ENABLED：`gnome-extensions info system-monitor-beautiful@jetio`
+1. 确认扩展状态为 ENABLED：`gnome-extensions info system-monitor-beautiful@$USER`
 2. 检查日志：`journalctl /usr/bin/gnome-shell -f`
 
 ## 重启 GNOME Shell 的方法

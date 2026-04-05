@@ -22,7 +22,9 @@ if [ "$(id -u)" -eq 0 ]; then
     exit 1
 fi
 
-EXTENSION_UUID="system-monitor-beautiful@jetio"
+# 获取当前用户名
+CURRENT_USER=$(whoami)
+EXTENSION_UUID="system-monitor-beautiful@${CURRENT_USER}"
 EXTENSION_DIR="$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID"
 SOURCE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -46,9 +48,12 @@ mkdir -p "$EXTENSION_DIR"
 # 复制文件
 echo "复制扩展文件..."
 cp "$SOURCE_DIR/extension.js" "$EXTENSION_DIR/"
-cp "$SOURCE_DIR/metadata.json" "$EXTENSION_DIR/"
-cp "$SOURCE_DIR/prefs.js" "$EXTENSION_DIR/"
 cp "$SOURCE_DIR/stylesheet.css" "$EXTENSION_DIR/"
+cp "$SOURCE_DIR/prefs.js" "$EXTENSION_DIR/"
+
+# 动态替换 metadata.json 中的用户名为当前用户名
+echo "生成 metadata.json (用户名: $CURRENT_USER)..."
+sed "s/@user/@${CURRENT_USER}/g" "$SOURCE_DIR/metadata.json" > "$EXTENSION_DIR/metadata.json"
 
 # 创建并编译 schema
 echo "编译 GSettings Schema..."
@@ -90,12 +95,13 @@ if gnome-extensions list 2>/dev/null | grep -q "$EXTENSION_UUID"; then
     echo ""
     if [ "$SESSION_TYPE" = "wayland" ]; then
         echo "[Wayland 会话] 请注销并重新登录"
-        echo "  命令: gnome-session-quit --logout --no-prompt"
+        echo "  方法 1: 点击右上角系统菜单 → 注销 → 重新登录"
+        echo "  方法 2: 运行命令: gnome-session-quit --logout --no-prompt"
     else
         echo "[X11 会话] 请按以下任一方式重启:"
-        echo "  1. 按 Alt+F2，输入 'r'，然后按 Enter（推荐）"
-        echo "  2. 运行: killall -3 gnome-shell"
-        echo "  3. 运行: dbus-send --session --dest=org.gnome.Shell --type=method_call /org/gnome/Shell org.gnome.Shell.Eval string:'global.restart()'"
+        echo "  方法 1: 按 Alt+F2，输入 'r'，然后按 Enter（推荐）"
+        echo "  方法 2: 运行命令: killall -3 gnome-shell"
+        echo "  方法 3: 运行命令: dbus-send --session --dest=org.gnome.Shell --type=method_call /org/gnome/Shell org.gnome.Shell.Eval string:'global.restart()'"
     fi
 else
     echo ""
@@ -107,13 +113,17 @@ else
     SESSION_TYPE=$(echo $XDG_SESSION_TYPE)
     echo "请尝试以下步骤:"
     if [ "$SESSION_TYPE" = "wayland" ]; then
-        echo "1. 注销并重新登录（Wayland 会话）"
+        echo "  1. 注销并重新登录（Wayland 会话）"
+        echo "     - 点击右上角系统菜单 → 注销 → 重新登录"
+        echo "     - 或运行: gnome-session-quit --logout --no-prompt"
     else
-        echo "1. 按 Alt+F2，输入 'r'，然后按 Enter 重启 GNOME Shell"
-        echo "   或运行: killall -3 gnome-shell"
+        echo "  1. 重启 GNOME Shell（X11 会话）"
+        echo "     - 方法 1: 按 Alt+F2，输入 'r'，然后按 Enter"
+        echo "     - 方法 2: 运行: killall -3 gnome-shell"
+        echo "     - 方法 3: 运行: dbus-send --session --dest=org.gnome.Shell --type=method_call /org/gnome/Shell org.gnome.Shell.Eval string:'global.restart()'"
     fi
-    echo "2. 运行: gnome-extensions enable $EXTENSION_UUID"
-    echo "3. 使用 'Extensions' 应用查看扩展状态"
+    echo "  2. 运行: gnome-extensions enable $EXTENSION_UUID"
+    echo "  3. 使用 'Extensions' 应用查看扩展状态"
 fi
 
 # 显示会话类型信息
