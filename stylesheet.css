@@ -1,0 +1,35 @@
+.system-monitor-indicator {
+    spacing: 0;
+}
+
+.system-monitor-box {
+    spacing: 6px;
+    padding: 0 2px;
+}
+
+.system-monitor-chip {
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-feature-settings: "tnum";
+    background-color: rgba(255, 255, 255, 0.10);
+    color: #f6f5f4;
+}
+
+.chip-cpu {
+    background-color: rgba(229, 165, 10, 0.22);
+}
+
+.chip-memory {
+    background-color: rgba(53, 132, 228, 0.22);
+}
+
+.chip-network {
+    background-color: rgba(38, 162, 105, 0.22);
+}
+
+.system-monitor-menu-title {
+    font-weight: 700;
+}

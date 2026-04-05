@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.system-monitor-beautiful" path="/org/gnome/shell/extensions/system-monitor-beautiful/">
+    <key name="refresh-interval" type="i">
+      <default>1</default>
+      <summary>刷新间隔（秒）</summary>
+      <description>控制系统监视器状态栏组件读取 /proc 数据并更新显示的频率，单位为秒。</description>
+      <range min="1" max="60"/>
+    </key>
+  </schema>
+</schemalist>
