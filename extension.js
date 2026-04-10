@@ -8,6 +8,8 @@ const ExtensionUtils = imports.misc.extensionUtils;
 
 const SETTINGS_SCHEMA = 'org.gnome.shell.extensions.system-monitor-beautiful';
 const REFRESH_INTERVAL_OPTIONS = [1, 2, 3, 5, 10];
+const CPU_ALERT_THRESHOLD_KEY = 'cpu-alert-threshold';
+const MEMORY_ALERT_THRESHOLD_KEY = 'memory-alert-threshold';
 
 function readTextFile(path) {
     try {
@@ -68,6 +70,16 @@ function formatRate(value, compact = false) {
 
     const digits = scaled >= 100 ? 0 : scaled >= 10 ? 1 : 1;
     return `${scaled.toFixed(digits)}${compact ? units[index] : ` ${units[index]}`}`;
+}
+
+function toggleStyleClass(actor, className, enabled) {
+    if (!actor)
+        return;
+
+    if (enabled)
+        actor.add_style_class_name(className);
+    else
+        actor.remove_style_class_name(className);
 }
 
 class ProcfsSampler {
@@ -278,6 +290,16 @@ class SystemMonitorIndicator extends PanelMenu.Button {
                 this._restartTimer();
             })
         );
+        this._settingsChangedSignals.push(
+            this._settings.connect(`changed::${CPU_ALERT_THRESHOLD_KEY}`, () => {
+                this._update();
+            })
+        );
+        this._settingsChangedSignals.push(
+            this._settings.connect(`changed::${MEMORY_ALERT_THRESHOLD_KEY}`, () => {
+                this._update();
+            })
+        );
 
         this._syncRefreshMenu();
         this._restartTimer();
@@ -357,6 +379,14 @@ class SystemMonitorIndicator extends PanelMenu.Button {
         return clamp(configured || 1, 1, 60);
     }
 
+    _getCpuAlertThreshold() {
+        return clamp(this._settings.get_int(CPU_ALERT_THRESHOLD_KEY) || 80, 1, 100);
+    }
+
+    _getMemoryAlertThreshold() {
+        return clamp(this._settings.get_int(MEMORY_ALERT_THRESHOLD_KEY) || 90, 1, 100);
+    }
+
     _restartTimer() {
         if (this._timeoutId) {
             GLib.source_remove(this._timeoutId);
@@ -377,10 +407,15 @@ class SystemMonitorIndicator extends PanelMenu.Button {
 
     _update() {
         const sample = this._sampler.sample();
+        const cpuAlert = sample.cpuUsage !== null && sample.cpuUsage >= this._getCpuAlertThreshold();
+        const memoryAlert = sample.memoryUsage !== null && sample.memoryUsage >= this._getMemoryAlertThreshold();
 
         this._cpuLabel.text = `CPU ${formatPercent(sample.cpuUsage)}`;
         this._memoryLabel.text = `MEM ${formatPercent(sample.memoryUsage)}`;
         this._networkLabel.text = `↓${formatRate(sample.downloadRate, true)} ↑${formatRate(sample.uploadRate, true)}`;
+
+        toggleStyleClass(this._cpuLabel, 'chip-cpu-alert', cpuAlert);
+        toggleStyleClass(this._memoryLabel, 'chip-memory-alert', memoryAlert);
 
         this._overviewItem.label.text = sample.activeInterface
             ? `接口 ${sample.activeInterface} · 每 ${this._getRefreshInterval()} 秒刷新`

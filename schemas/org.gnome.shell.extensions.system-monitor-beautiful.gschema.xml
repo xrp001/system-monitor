@@ -7,5 +7,17 @@
       <description>控制系统监视器状态栏组件读取 /proc 数据并更新显示的频率，单位为秒。</description>
       <range min="1" max="60"/>
     </key>
+    <key name="cpu-alert-threshold" type="i">
+      <default>80</default>
+      <summary>CPU 告警阈值</summary>
+      <description>当 CPU 使用率达到该百分比时，高亮显示 CPU 监控项。</description>
+      <range min="1" max="100"/>
+    </key>
+    <key name="memory-alert-threshold" type="i">
+      <default>90</default>
+      <summary>内存告警阈值</summary>
+      <description>当内存使用率达到该百分比时，高亮显示内存监控项。</description>
+      <range min="1" max="100"/>
+    </key>
   </schema>
 </schemalist>
