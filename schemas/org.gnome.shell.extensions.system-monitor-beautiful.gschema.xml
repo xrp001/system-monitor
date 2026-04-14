@@ -19,5 +19,16 @@
       <description>当内存使用率达到该百分比时，高亮显示内存监控项。</description>
       <range min="1" max="100"/>
     </key>
+    <key name="show-process-ranking" type="b">
+      <default>false</default>
+      <summary>显示进程排行</summary>
+      <description>在下拉菜单中显示 CPU、内存和网络占用前 N 的进程。</description>
+    </key>
+    <key name="process-ranking-limit" type="i">
+      <default>3</default>
+      <summary>进程排行数量</summary>
+      <description>控制下拉菜单中每个维度显示的 Top 进程数量。</description>
+      <range min="1" max="10"/>
+    </key>
   </schema>
 </schemalist>

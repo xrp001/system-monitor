@@ -6,6 +6,8 @@ const SETTINGS_SCHEMA = 'org.gnome.shell.extensions.system-monitor-beautiful';
 const REFRESH_INTERVAL_OPTIONS = [1, 2, 3, 5, 10];
 const CPU_ALERT_THRESHOLD_KEY = 'cpu-alert-threshold';
 const MEMORY_ALERT_THRESHOLD_KEY = 'memory-alert-threshold';
+const SHOW_PROCESS_RANKING_KEY = 'show-process-ranking';
+const PROCESS_RANKING_LIMIT_KEY = 'process-ranking-limit';
 
 function init() {
 }
@@ -111,6 +113,66 @@ function fillPreferencesWindow(window) {
 
     createThresholdRow('CPU 告警阈值', 'CPU 使用率达到该值时高亮提示。', CPU_ALERT_THRESHOLD_KEY);
     createThresholdRow('内存告警阈值', '内存使用率达到该值时高亮提示。', MEMORY_ALERT_THRESHOLD_KEY);
+
+    const rankingSwitchRow = new Adw.ActionRow({
+        title: '显示进程排行',
+        subtitle: '在插件下拉菜单中展示 CPU、内存、网络占用前 N 的进程。',
+    });
+    const rankingSwitch = new Gtk.Switch({
+        valign: Gtk.Align.CENTER,
+        active: settings.get_boolean(SHOW_PROCESS_RANKING_KEY),
+    });
+    const syncRankingSwitch = () => {
+        const active = settings.get_boolean(SHOW_PROCESS_RANKING_KEY);
+        if (rankingSwitch.get_active() !== active)
+            rankingSwitch.set_active(active);
+    };
+    rankingSwitch.connect('notify::active', widget => {
+        const value = widget.get_active();
+        if (settings.get_boolean(SHOW_PROCESS_RANKING_KEY) !== value)
+            settings.set_boolean(SHOW_PROCESS_RANKING_KEY, value);
+    });
+    settings.connect(`changed::${SHOW_PROCESS_RANKING_KEY}`, syncRankingSwitch);
+    syncRankingSwitch();
+    rankingSwitchRow.add_suffix(rankingSwitch);
+    rankingSwitchRow.activatable_widget = rankingSwitch;
+    group.add(rankingSwitchRow);
+
+    const rankingLimitRow = new Adw.ActionRow({
+        title: '进程排行数量',
+        subtitle: '控制每个分类显示前多少个进程。',
+    });
+    const rankingLimitAdjustment = new Gtk.Adjustment({
+        lower: 1,
+        upper: 10,
+        step_increment: 1,
+        page_increment: 1,
+        page_size: 0,
+        value: settings.get_int(PROCESS_RANKING_LIMIT_KEY),
+    });
+    const rankingLimitSpinButton = new Gtk.SpinButton({
+        adjustment: rankingLimitAdjustment,
+        climb_rate: 1,
+        digits: 0,
+        numeric: true,
+        valign: Gtk.Align.CENTER,
+        width_chars: 3,
+    });
+    const syncRankingLimit = () => {
+        const current = settings.get_int(PROCESS_RANKING_LIMIT_KEY);
+        if (rankingLimitSpinButton.get_value_as_int() !== current)
+            rankingLimitSpinButton.set_value(current);
+    };
+    rankingLimitSpinButton.connect('value-changed', widget => {
+        const value = widget.get_value_as_int();
+        if (settings.get_int(PROCESS_RANKING_LIMIT_KEY) !== value)
+            settings.set_int(PROCESS_RANKING_LIMIT_KEY, value);
+    });
+    settings.connect(`changed::${PROCESS_RANKING_LIMIT_KEY}`, syncRankingLimit);
+    syncRankingLimit();
+    rankingLimitRow.add_suffix(rankingLimitSpinButton);
+    rankingLimitRow.activatable_widget = rankingLimitSpinButton;
+    group.add(rankingLimitRow);
 
     page.add(group);
     window.add(page);
