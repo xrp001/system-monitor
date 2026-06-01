@@ -100,8 +100,49 @@ function formatRate(value, compact = false) {
 
 function formatProcessIdentity(process) {
     const label = process?.name || 'unknown';
-    const pid = process?.pid ?? '--';
-    return `${label} (${pid})`;
+    const pidLabel = formatPidLabel(process);
+    return `${label} (${pidLabel})`;
+}
+
+function formatPidLabel(process) {
+    if (process?.pids && process.pids.length > 0) {
+        const sortedPids = [...process.pids].sort((left, right) => left - right);
+        const preview = sortedPids.slice(0, 3).join(',');
+        return sortedPids.length > 3
+            ? `${preview} +${sortedPids.length - 3}`
+            : preview;
+    }
+
+    return `${process?.pid ?? '--'}`;
+}
+
+function aggregateProcessesByName(processes, metricKeys) {
+    const aggregated = new Map();
+
+    for (const process of processes) {
+        const name = process?.name || 'unknown';
+        let existing = aggregated.get(name);
+
+        if (!existing) {
+            existing = {
+                name,
+                pids: [],
+            };
+
+            for (const key of metricKeys)
+                existing[key] = 0;
+
+            aggregated.set(name, existing);
+        }
+
+        if (process?.pid !== undefined && process?.pid !== null && !existing.pids.includes(process.pid))
+            existing.pids.push(process.pid);
+
+        for (const key of metricKeys)
+            existing[key] += process[key] ?? 0;
+    }
+
+    return [...aggregated.values()];
 }
 
 function toggleStyleClass(actor, className, enabled) {
@@ -269,18 +310,22 @@ class ProcfsSampler {
             processes: networkSnapshot,
         };
 
+        const aggregatedCpuRanking = aggregateProcessesByName(cpuRanking, ['cpuUsage'])
+            .sort((left, right) => right.cpuUsage - left.cpuUsage)
+            .slice(0, processLimit);
+        const aggregatedMemoryRanking = aggregateProcessesByName(memoryRanking, ['memoryBytes'])
+            .sort((left, right) => right.memoryBytes - left.memoryBytes)
+            .slice(0, processLimit);
+        const aggregatedNetworkRanking = aggregateProcessesByName(networkRanking, ['downloadRate', 'uploadRate', 'totalRate'])
+            .sort((left, right) => right.totalRate - left.totalRate)
+            .slice(0, processLimit);
+
         return {
             cpuReady: hadPreviousProcessCpu && cpuTotalDelta > 0,
             networkReady: hadPreviousProcessNetwork && networkElapsedSeconds > 0,
-            cpu: cpuRanking
-                .sort((left, right) => right.cpuUsage - left.cpuUsage)
-                .slice(0, processLimit),
-            memory: memoryRanking
-                .sort((left, right) => right.memoryBytes - left.memoryBytes)
-                .slice(0, processLimit),
-            network: networkRanking
-                .sort((left, right) => right.totalRate - left.totalRate)
-                .slice(0, processLimit),
+            cpu: aggregatedCpuRanking,
+            memory: aggregatedMemoryRanking,
+            network: aggregatedNetworkRanking,
         };
     }
 
